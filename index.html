@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Guia prático de instalação do PaScal Analyzer e TAU, seguido pela captura e análise de traces com pascal_trace.">
+  <title>PaScal Suite + TAU · Guia de Instalação e Tracing</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Guia de instalação e tracing">
+      <a class="brand" href="#conteudo">
+        <span class="logo-badge">PaScal</span>
+        <span>Suite · Docs</span>
+      </a>
+      <div class="side-subtitle">Instalação & Tracing</div>
+      <nav class="nav" aria-label="Etapas do tutorial">
+        <a href="#pascal-install" aria-current="step"><span class="nav-num">01</span>PaScal Analyzer</a>
+        <a href="#tau-install"><span class="nav-num">02</span>Instalação do TAU</a>
+        <a href="#ambiente"><span class="nav-num">03</span>Variáveis de Ambiente</a>
+        <a href="#pascal-trace"><span class="nav-num">04</span>Executar pascal_trace</a>
+        <a href="#pos-trace"><span class="nav-num">05</span>Conversão e Análise</a>
+      </nav>
+      <div class="side-progress">
+        <span id="progress-label">0 de 5 etapas concluídas</span>
+        <progress id="progress" max="5" value="0" aria-labelledby="progress-label"></progress>
+        <p class="small">Marque cada etapa ao terminar.<br>O progresso fica neste navegador.</p>
+      </div>
+      <div class="side-footer">LAPPS · UFRN</div>
+    </aside>
+
+    <main id="conteudo">
+      <div class="top-controls">
+        <div class="control-group">
+          <span>Tema</span>
+          <button id="theme" class="pill-toggle" type="button" role="switch" aria-checked="false" aria-label="Ativar modo escuro" title="Modo Claro / Escuro">
+            <span class="pill-option" data-theme-opt="light" aria-hidden="true">☀</span>
+            <span class="pill-track" aria-hidden="true"></span>
+            <span class="pill-option" data-theme-opt="dark" aria-hidden="true">☾</span>
+          </button>
+        </div>
+
+        <div class="control-group">
+          <span>Idioma / Language</span>
+          <button id="language" class="pill-toggle" type="button" role="switch" aria-checked="false" aria-label="Usar inglês" title="Português / English">
+            <span class="pill-option" lang="pt-BR" aria-hidden="true">PT</span>
+            <span class="pill-track" aria-hidden="true"></span>
+            <span class="pill-option" lang="en" aria-hidden="true">EN</span>
+          </button>
+        </div>
+      </div>
+
+      <header class="hero">
+        <div class="eyebrow">Guia Técnico / Ambiente HPC</div>
+        <h1>Instalação do <span>PaScal Analyzer</span>, TAU e <code>pascal_trace</code></h1>
+        <p class="lead">Configuração completa das ferramentas de análise de escalabilidade, instrumentação e captura de rastros de execução.</p>
+        <div class="meta">
+          <span>Linux (x86_64) · OpenMP / MPI</span>
+          <span>PaScal Suite + TAU Commander</span>
+        </div>
+        <div class="hero-links">
+          <a class="button primary" href="#pascal-install">Começar instalação ↓</a>
+          <a class="button" href="https://pascalsuite.imd.ufrn.br/dev-ang-pascal-viewer/" target="_blank" rel="noopener noreferrer">Abrir PaScal Viewer ↗</a>
+        </div>
+      </header>
+
+      <div class="config-box">
+        <div>
+          <h2>Diretório base de instalação</h2>
+          <p>Personalize o caminho raiz onde as ferramentas serão instaladas. Todos os comandos abaixo serão atualizados automaticamente.</p>
+        </div>
+        <div>
+          <label for="install-dir">Caminho de instalação (PREFIX)</label>
+          <input type="text" id="install-dir" value="$HOME/tools" aria-describedby="dir-help">
+        </div>
+        <p id="dir-help" class="small config-help">Exemplo: <code>$HOME/tools</code> ou <code>/opt/hpc</code></p>
+      </div>
+
+      <!-- ETAPA 01 -->
+      <section class="section" id="pascal-install" aria-labelledby="pascal-title">
+        <div class="section-head">
+          <div class="eyebrow">Etapa 01 / Escalabilidade</div>
+          <h2 id="pascal-title">Instalar o PaScal Analyzer</h2>
+          <p>Baixe o pacote de releases do PaScal Suite e valide a instalação da CLI e da biblioteca de instrumentação.</p>
+        </div>
+        <div class="section-body">
+          <h3><span class="step">1</span>Crie o diretório e baixe o release</h3>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · DOWNLOAD</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code data-template="mkdir -p {prefix} && cd {prefix}
+git clone https://gitlab.com/lappsufrn/pascalsuite-analyzer.git
+unzip -q pascal-releases-master.zip
+cd pascal-releases-master">mkdir -p $HOME/tools && cd $HOME/tools
+wget -c https://gitlab.com/lappsufrn/pascal-releases/-/archive/master/pascal-releases-master.zip
+unzip -q pascal-releases-master.zip
+cd pascal-releases-master</code></pre>
+          </div>
+
+          <h3><span class="step">2</span>Carregue o ambiente e teste</h3>
+          <p>O script <code>env.sh</code> exporta os binários (<code>pascalanalyzer</code>) e os caminhos de headers/bibliotecas (<code>libpascal</code>) para a sessão atual.</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · VALIDAÇÃO</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code>source env.sh
+pascalanalyzer -h</code></pre>
+          </div>
+          <div class="expect"><strong>Checkpoint:</strong> a mensagem de ajuda exibindo as flags (<code>-t</code>, <code>-c</code>, <code>-o</code>, etc.) deve aparecer sem erros de dependência Python.</div>
+          <label class="complete"><input type="checkbox" data-step="pascal">Instalei o PaScal Analyzer e validei pascalanalyzer -h.</label>
+        </div>
+      </section>
+
+      <!-- ETAPA 02 -->
+      <section class="section" id="tau-install" aria-labelledby="tau-title">
+        <div class="section-head">
+          <div class="eyebrow">Etapa 02 / Profiling & Tracing</div>
+          <h2 id="tau-title">Instalar e configurar o TAU</h2>
+          <p>O Tuning and Analysis Utilities (TAU) é responsável pela coleta detalhada de eventos e rastros de execução.</p>
+        </div>
+        <div class="section-body">
+          <h3><span class="step">1</span>Baixe e extraia o TAU</h3>
+          <p>Caso o sistema já possua um módulo HPC (ex.: <code>module load tau</code> ou via Spack), você pode pular a compilação manual.</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · DOWNLOAD TAU</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code data-template="cd {prefix}
+wget -c https://www.cs.uoregon.edu/research/tau/tau_releases/tau-2.33.2.tar.gz
+tar -xzf tau-2.33.2.tar.gz
+cd tau-2.33.2">cd $HOME/tools
+wget -c https://www.cs.uoregon.edu/research/tau/tau_releases/tau-2.33.2.tar.gz
+tar -xzf tau-2.33.2.tar.gz
+cd tau-2.33.2</code></pre>
+          </div>
+
+          <h3><span class="step">2</span>Configure e compile com suporte a OpenMP / MPI</h3>
+          <p>Ajuste as flags conforme os compiladores disponíveis no seu nó (<code>gcc</code>, <code>mpicc</code>, <code>ompt</code> ou <code>opari</code>).</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · COMPILAÇÃO</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code data-template="./configure -prefix={prefix}/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari -bfd=download -dwarf=download
+make install -j$(nproc)">./configure -prefix=$HOME/tools/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari -bfd=download -dwarf=download
+make install -j$(nproc)</code></pre>
+          </div>
+
+          <details>
+            <summary>Usando Spack no cluster? (Alternativa rápida)</summary>
+            <p>Se o Spack estiver configurado no ambiente, instale com:</p>
+            <div class="command command-compact">
+              <div class="command-top"><span>SPACK</span><button class="copy" type="button">Copiar</button></div>
+              <pre><code>spack install tau +mpi +openmp
+spack load tau</code></pre>
+            </div>
+          </details>
+
+          <label class="complete"><input type="checkbox" data-step="tau">Compilei e instalei o TAU com sucesso.</label>
+        </div>
+      </section>
+
+      <!-- ETAPA 03 -->
+      <section class="section" id="ambiente" aria-labelledby="ambiente-title">
+        <div class="section-head">
+          <div class="eyebrow">Etapa 03 / Integração</div>
+          <h2 id="ambiente-title">Configurar variáveis de ambiente</h2>
+          <p>Unifique o <code>PATH</code> e os Makefiles do TAU com o PaScal Suite para que o <code>pascal_trace</code> funcione de qualquer diretório.</p>
+        </div>
+        <div class="section-body">
+          <h3><span class="step">1</span>Adicione as exportações ao seu shell</h3>
+          <p>Inclua o bloco abaixo no final do seu <code>~/.bashrc</code> (ou carregue antes de cada sessão de análise):</p>
+          <div class="command">
+            <div class="command-top"><span>~/.BASHRC · CONFIGURAÇÃO UNIFICADA</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code data-template="# PaScal Suite
+source {prefix}/pascal-releases-master/env.sh
+
+# TAU Performance System
+export TAU_ROOT={prefix}/tau/x86_64
+export PATH=$TAU_ROOT/bin:$PATH
+export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)"># PaScal Suite
+source $HOME/tools/pascal-releases-master/env.sh
+
+# TAU Performance System
+export TAU_ROOT=$HOME/tools/tau/x86_64
+export PATH=$TAU_ROOT/bin:$PATH
+export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)</code></pre>
+          </div>
+
+          <h3><span class="step">2</span>Recarregue e valide os binários</h3>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · VERIFICAÇÃO</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code>source ~/.bashrc
+which pascalanalyzer tau_exec tau_convert</code></pre>
+          </div>
+          <div class="expect"><strong>Checkpoint:</strong> os três comandos devem retornar caminhos válidos dentro do diretório de instalação, e <code>echo $TAU_MAKEFILE</code> deve apontar para um arquivo <code>Makefile.tau-...</code> existente.</div>
+          <label class="complete"><input type="checkbox" data-step="env">Configurei o PATH e verifiquei pascalanalyzer e tau_exec.</label>
+        </div>
+      </section>
+
+      <!-- ETAPA 04 -->
+      <section class="section" id="pascal-trace" aria-labelledby="trace-title">
+        <div class="section-head">
+          <div class="eyebrow">Etapa 04 / Coleta de Rastro</div>
+          <h2 id="trace-title">Executar o <code>pascal_trace</code></h2>
+          <p>Habilite o modo de tracing do TAU durante a execução instrumentada da aplicação.</p>
+        </div>
+        <div class="section-body">
+          <h3><span class="step">1</span>Compile a aplicação com o wrapper do TAU</h3>
+          <p>Para capturar regiões internas, chamadas MPI e eventos OpenMP no trace, compile utilizando <code>tau_cxx.sh</code> (ou <code>tau_cc.sh</code>) vinculado à biblioteca do PaScal:</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · COMPILAÇÃO INSTRUMENTADA</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code>tau_cxx.sh -O3 -fopenmp app.cpp -lpascal -o app_trace</code></pre>
+          </div>
+
+          <h3><span class="step">2</span>Ative o tracing e execute o <code>pascal_trace</code></h3>
+          <p>Defina <code>TAU_TRACE=1</code> e um diretório de saída dedicado para evitar que dezenas de arquivos <code>.trc</code> e <code>.edf</code> poluam a pasta raiz do projeto.</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · EXECUÇÃO COM PASCAL_TRACE</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code>mkdir -p traces_out
+export TAU_TRACE=1
+export TRACEDIR=$PWD/traces_out
+
+pascal_trace -t "1,2,4,8" -c "./app_trace 1000" -o resultado_trace.json</code></pre>
+          </div>
+
+          <div class="note warning">
+            <strong>Atenção ao volume de dados:</strong> arquivos de trace crescem rapidamente em aplicações com laços muito curtos e alta frequência de chamadas. Para testes iniciais, utilize entradas moderadas ou configure <code>TAU_THROTTLE=1</code>.
+          </div>
+
+          <label class="complete"><input type="checkbox" data-step="trace">Executei o pascal_trace e gerei os arquivos .trc / .edf.</label>
+        </div>
+      </section>
+
+      <!-- ETAPA 05 -->
+      <section class="section" id="pos-trace" aria-labelledby="postrace-title">
+        <div class="section-head">
+          <div class="eyebrow">Etapa 05 / Pós-processamento</div>
+          <h2 id="postrace-title">Conversão e Análise Pós-Trace</h2>
+          <p>Consolide os rastros brutos gerados pelo TAU após o término do <code>pascal_trace</code> e visualize a linha do tempo e métricas.</p>
+        </div>
+        <div class="section-body">
+          <p>Após o <code>pascal_trace</code> concluir, o diretório <code>traces_out/</code> conterá um par de arquivos <code>tautrace.<node>.<context>.<thread>.trc</code> e definições de eventos <code>events.<node>.edf</code> para cada thread/processo.</p>
+
+          <h3><span class="step">1</span>Mescle e converta os arquivos de trace</h3>
+          <p>Utilize o <code>tau_treemerge.pl</code> para unificar as threads e o <code>tau_convert</code> para exportar o rastro para formatos legíveis (como SLOG-2 para o Jumpshot, OTF2 ou texto estruturado para ingestão no PaScal Viewer):</p>
+          <div class="command">
+            <div class="command-top"><span>TERMINAL · MERGE E CONVERSÃO</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code>cd traces_out
+tau_treemerge.pl
+tau_convert -dump tau.trc events.edf > trace_legivel.txt</code></pre>
+          </div>
+
+          <h3><span class="step">2</span>Opções de saída após o <code>pascal_trace</code></h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Artefato Gerado</th>
+                  <th scope="col">Ferramenta / Comando</th>
+                  <th scope="col">Finalidade na Análise</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>resultado_trace.json</code></td>
+                  <td><a href="https://pascalsuite.imd.ufrn.br/dev-ang-pascal-viewer/" target="_blank" rel="noopener noreferrer">PaScal Viewer ↗</a></td>
+                  <td>Avaliar speedup, eficiência e comportamento de escalabilidade das execuções rastreadas.</td>
+                </tr>
+                <tr>
+                  <td><code>tau.slog2</code></td>
+                  <td><code>tau2slog2 tau.trc events.edf -o tau.slog2</code></td>
+                  <td>Visualização gráfica de linha do tempo (Gantt) e comunicação/sincronização entre threads no Jumpshot.</td>
+                </tr>
+                <tr>
+                  <td><code>trace_legivel.txt</code></td>
+                  <td><code>tau_convert -dump tau.trc events.edf</code></td>
+                  <td>Inspeção textual de timestamps de entrada/saída de funções e parsing automatizado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="expect">
+            <strong>O que observar após o trace:</strong> cruze os gargalos de eficiência apontados no <code>resultado_trace.json</code> (no PaScal Viewer) com a linha do tempo detalhada do TAU para identificar barreiras implícitas do OpenMP, espera por bloqueios (locks) ou desbalanceamento entre threads.
+          </div>
+
+          <label class="complete"><input type="checkbox" data-step="postrace">Converti os rastros do TAU e analisei os resultados.</label>
+        </div>
+      </section>
+
+      <div class="finish">
+        <div class="eyebrow">Fluxo Concluído</div>
+        <h2>Ambiente pronto para análise de escalabilidade e tracing.</h2>
+        <p>Com o PaScal Analyzer e o TAU integrados, você pode alternar entre medições leves de escalabilidade e rastros profundos de execução sempre que identificar quedas de eficiência.</p>
+      </div>
+
+      <footer>PaScal Suite + TAU · Guia de Instalação e Pós-Tracing</footer>
+    </main>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const storageKey = 'pascal-tau-install-guide';
+      const dirInput = document.querySelector('#install-dir');
+      const languageToggle = document.querySelector('#language');
+      const themeToggle = document.querySelector('#theme');
+      const checks = [...document.querySelectorAll('[data-step]')];
+      const toast = document.querySelector('.toast');
+      let toastTimer;
+
+      let saved = {};
+      try {
+        const value = JSON.parse(localStorage.getItem(storageKey));
+        if (value && typeof value === 'object') saved = value;
+      } catch { /* Ignore storage restrictions */ }
+
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      let theme = saved.theme === 'dark' || saved.theme === 'light' ? saved.theme : (prefersDark ? 'dark' : 'light');
+      let language = saved.language === 'en' ? 'en' : 'pt-BR';
+
+      const translations = {
+        'Tema': 'Theme',
+        'Instalação & Tracing': 'Installation & Tracing',
+        'Variáveis de Ambiente': 'Environment Variables',
+        'Conversão e Análise': 'Conversion & Analysis',
+        'Marque cada etapa ao terminar.': 'Check each step as you finish.',
+        'O progresso fica neste navegador.': 'Progress is saved in this browser.',
+        'Guia Técnico / Ambiente HPC': 'Technical Guide / HPC Environment',
+        'Configuração completa das ferramentas de análise de escalabilidade, instrumentação e captura de rastros de execução.': 'Complete setup of scalability analysis, instrumentation, and execution tracing tools.',
+        'Começar instalação ↓': 'Start installation ↓',
+        'Abrir PaScal Viewer ↗': 'Open PaScal Viewer ↗',
+        'Diretório base de instalação': 'Base installation directory',
+        'Personalize o caminho raiz onde as ferramentas serão instaladas. Todos os comandos abaixo serão atualizados automaticamente.': 'Customize the root path where tools will be installed. All commands below will update automatically.',
+        'Caminho de instalação (PREFIX)': 'Installation path (PREFIX)',
+        'Etapa 01 / Escalabilidade': 'Step 01 / Scalability',
+        'Instalar o PaScal Analyzer': 'Install PaScal Analyzer',
+        'Baixe o pacote de releases do PaScal Suite e valide a instalação da CLI e da biblioteca de instrumentação.': 'Download the PaScal Suite release package and validate the CLI and instrumentation library installation.',
+        'Etapa 02 / Profiling & Tracing': 'Step 02 / Profiling & Tracing',
+        'Instalar e configurar o TAU': 'Install and configure TAU',
+        'Etapa 03 / Integração': 'Step 03 / Integration',
+        'Configurar variáveis de ambiente': 'Configure environment variables',
+        'Etapa 04 / Coleta de Rastro': 'Step 04 / Trace Collection',
+        'Etapa 05 / Pós-processamento': 'Step 05 / Post-processing',
+        'Conversão e Análise Pós-Trace': 'Post-Trace Conversion & Analysis',
+        'Fluxo Concluído': 'Workflow Completed'
+      };
+
+      const textNodes = [];
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node.parentElement.closest('script, style, pre, code, .copy, #progress-label')) continue;
+        const original = node.nodeValue;
+        const key = original.trim();
+        if (Object.hasOwn(translations, key)) {
+          textNodes.push({ node, original, english: original.replace(key, translations[key]) });
+        }
+      }
+
+      function t(pt, en) { return language === 'en' ? en : pt; }
+
+      function updateTheme() {
+        document.documentElement.dataset.theme = theme;
+        themeToggle.setAttribute('aria-checked', String(theme === 'dark'));
+        themeToggle.setAttribute(
+          'aria-label',
+          theme === 'dark'
+            ? t('Ativar modo claro', 'Switch to light mode')
+            : t('Ativar modo escuro', 'Switch to dark mode')
+        );
+      }
+
+      function updateCopyLabels() {
+        document.querySelectorAll('.copy').forEach(button => {
+          button.textContent = t('Copiar', 'Copy');
+          button.setAttribute('aria-label', `${t('Copiar', 'Copy')}: ${button.closest('.command').querySelector('.command-top span').textContent}`);
+        });
+      }
+
+      function updateLanguage() {
+        document.documentElement.lang = language;
+        languageToggle.setAttribute('aria-checked', String(language === 'en'));
+        languageToggle.setAttribute('aria-label', t('Usar inglês', 'Use English'));
+        textNodes.forEach(({ node, original, english }) => {
+          node.nodeValue = language === 'en' ? english : original;
+        });
+        toast.textContent = '';
+        updateTheme();
+        updatePrefix();
+        updateProgress();
+      }
+
+      themeToggle.addEventListener('click', () => {
+        theme = theme === 'dark' ? 'light' : 'dark';
+        updateTheme();
+        persist();
+      });
+
+      languageToggle.addEventListener('click', () => {
+        language = language === 'en' ? 'pt-BR' : 'en';
+        updateLanguage();
+        persist();
+      });
+
+      if (saved.prefix && typeof saved.prefix === 'string') {
+        dirInput.value = saved.prefix;
+      }
+
+      checks.forEach(input => {
+        input.checked = saved.steps?.[input.dataset.step] === true;
+      });
+
+      function persist() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify({
+            theme,
+            language,
+            prefix: dirInput.value.trim() || '$HOME/tools',
+            steps: Object.fromEntries(checks.map(input => [input.dataset.step, input.checked]))
+          }));
+        } catch { /* Ignore storage errors */ }
+      }
+
+      function updatePrefix() {
+        const prefix = dirInput.value.trim() || '$HOME/tools';
+        document.querySelectorAll('[data-template]').forEach(el => {
+          el.textContent = el.dataset.template.replaceAll('{prefix}', prefix);
+        });
+        updateCopyLabels();
+      }
+
+      function updateProgress() {
+        const completed = checks.filter(input => input.checked).length;
+        document.querySelector('#progress').value = completed;
+        document.querySelector('#progress-label').textContent = t(
+          `${completed} de 5 etapas concluídas`,
+          `${completed} of 5 steps completed`
+        );
+      }
+
+      dirInput.addEventListener('input', () => { updatePrefix(); persist(); });
+      checks.forEach(input => input.addEventListener('change', () => { updateProgress(); persist(); }));
+
+      function announce(message) {
+        clearTimeout(toastTimer);
+        toast.textContent = message;
+        toastTimer = setTimeout(() => { toast.textContent = ''; }, 4500);
+      }
+
+      async function copy(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          try { await navigator.clipboard.writeText(text); return; } catch { /* Fallback */ }
+        }
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.setAttribute('readonly', '');
+        field.style.cssText = 'position:fixed;top:0;left:-9999px;';
+        document.body.append(field);
+        const previousFocus = document.activeElement;
+        try {
+          field.select();
+          if (!document.execCommand('copy')) throw new Error('Clipboard unavailable');
+        } finally {
+          field.remove();
+          previousFocus?.focus({ preventScroll: true });
+        }
+      }
+
+      document.querySelectorAll('.copy').forEach(button => {
+        const command = button.closest('.command');
+        button.addEventListener('click', async () => {
+          button.disabled = true;
+          try {
+            await copy(command.querySelector('code').textContent);
+            button.textContent = t('Copiado ✓', 'Copied ✓');
+            announce(t('Trecho copiado para a área de transferência.', 'Copied to clipboard.'));
+            setTimeout(() => { button.textContent = t('Copiar', 'Copy'); }, 2000);
+          } catch {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(command.querySelector('code'));
+            selection.removeAllRanges();
+            selection.addRange(range);
+            announce(t('Trecho selecionado. Use Ctrl+C ou ⌘C para copiar.', 'Text selected. Press Ctrl+C or ⌘C to copy.'));
+          } finally { button.disabled = false; }
+        });
+      });
+
+      const sections = [...document.querySelectorAll('section[id]')];
+      const navLinks = [...document.querySelectorAll('.nav a')];
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+          const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          if (!visible.length) return;
+          const id = visible[0].target.id;
+          navLinks.forEach(link => {
+            if (link.hash === `#${id}`) link.setAttribute('aria-current', 'step');
+            else link.removeAttribute('aria-current');
+          });
+        }, { rootMargin: '-5% 0px -55% 0px', threshold: 0 });
+        sections.forEach(section => observer.observe(section));
+      }
+
+      updateLanguage();
+    })();
+  </script>
+</body>
+</html>
