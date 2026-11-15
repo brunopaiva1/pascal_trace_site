@@ -54,10 +54,10 @@
 
       <header class="hero">
         <div class="eyebrow">Guia Técnico / Ambiente HPC</div>
-        <h1>Instalação do <span>PaScal Analyzer</span>, TAU e <code>pascal_trace</code></h1>
+        <h1>Instalação do <span>PaScal Analyzer</span>, TAU e Configuração do <span>PaScal Trace</span></h1>
         <p class="lead">Configuração completa das ferramentas de análise de escalabilidade, instrumentação e captura de rastros de execução.</p>
         <div class="meta">
-          <span>Linux (x86_64) · OpenMP / MPI</span>
+          <span>Linux (x86_64) · OpenMP</span>
           <span>PaScal Suite + TAU Commander</span>
         </div>
         <div class="hero-links">
@@ -90,12 +90,15 @@
           <div class="command">
             <div class="command-top"><span>TERMINAL · DOWNLOAD</span><button class="copy" type="button">Copiar</button></div>
             <pre><code data-template="mkdir -p {prefix} && cd {prefix}
+sudo apt update
+sudo apt install -y g++ gcc swig libpfm4-dev python3-dev python3-pip make
 git clone https://gitlab.com/lappsufrn/pascalsuite-analyzer.git
-unzip -q pascal-releases-master.zip
-cd pascal-releases-master">mkdir -p $HOME/tools && cd $HOME/tools
-wget -c https://gitlab.com/lappsufrn/pascal-releases/-/archive/master/pascal-releases-master.zip
-unzip -q pascal-releases-master.zip
-cd pascal-releases-master</code></pre>
+cd pascalsuite-analyzer/
+git switch feat/tau_integration">sudo apt update
+sudo apt install -y g++ gcc swig libpfm4-dev python3-dev python3-pip make
+git clone https://gitlab.com/lappsufrn/pascalsuite-analyzer.git
+cd pascalsuite-analyzer/
+git switch tfeat/tau_integration </code></pre>
           </div>
 
           <h3><span class="step">2</span>Carregue o ambiente e teste</h3>
@@ -132,7 +135,7 @@ cd tau-2.33.2</code></pre>
           </div>
 
           <h3><span class="step">2</span>Configure e compile com suporte a OpenMP / MPI</h3>
-          <p>Ajuste as flags conforme os compiladores disponíveis no seu nó (<code>gcc</code>, <code>mpicc</code>, <code>ompt</code> ou <code>opari</code>).</p>
+          <p>Ajuste as flags conforme os compiladores disponíveis no seu nó (<code>gcc</code>, <code>mpicc</code> e <code>opari</code>).</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · COMPILAÇÃO</span><button class="copy" type="button">Copiar</button></div>
             <pre><code data-template="./configure -prefix={prefix}/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari -bfd=download -dwarf=download
@@ -167,18 +170,22 @@ spack load tau</code></pre>
           <div class="command">
             <div class="command-top"><span>~/.BASHRC · CONFIGURAÇÃO UNIFICADA</span><button class="copy" type="button">Copiar</button></div>
             <pre><code data-template="# PaScal Suite
-source {prefix}/pascal-releases-master/env.sh
+source {prefix}/pascalsuite-analyzer/env.sh
 
 # TAU Performance System
 export TAU_ROOT={prefix}/tau/x86_64
 export PATH=$TAU_ROOT/bin:$PATH
-export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)"># PaScal Suite
-source $HOME/tools/pascal-releases-master/env.sh
+export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)
+export TAU_MAKEFILE=/home/brunopaiva/tau-2.35.1/x86_64/lib/Makefile.tau-openmp-opari
+export TAU_TRACE=1"># PaScal Suite
+source $HOME/tools/pascalsuite-analyzer/env.sh
 
 # TAU Performance System
 export TAU_ROOT=$HOME/tools/tau/x86_64
 export PATH=$TAU_ROOT/bin:$PATH
-export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)</code></pre>
+export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)
+export TAU_MAKEFILE=/home/brunopaiva/tau-2.35.1/x86_64/lib/Makefile.tau-openmp-opari
+export TAU_TRACE=1</code></pre>
           </div>
 
           <h3><span class="step">2</span>Recarregue e valide os binários</h3>
@@ -201,21 +208,17 @@ which pascalanalyzer tau_exec tau_convert</code></pre>
         </div>
         <div class="section-body">
           <h3><span class="step">1</span>Compile a aplicação com o wrapper do TAU</h3>
-          <p>Para capturar regiões internas, chamadas MPI e eventos OpenMP no trace, compile utilizando <code>tau_cxx.sh</code> (ou <code>tau_cc.sh</code>) vinculado à biblioteca do PaScal:</p>
+          <p>Para capturar regiões internas de eventos OpenMP no trace, compile utilizando <code>tau_cxx.sh</code></p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · COMPILAÇÃO INSTRUMENTADA</span><button class="copy" type="button">Copiar</button></div>
-            <pre><code>tau_cxx.sh -O3 -fopenmp app.cpp -lpascal -o app_trace</code></pre>
+            <pre><code>tau_cxx.sh -optOpari -fopenmp -O2 app_trace.cpp -o app_trace</code></pre>
           </div>
 
-          <h3><span class="step">2</span>Ative o tracing e execute o <code>pascal_trace</code></h3>
-          <p>Defina <code>TAU_TRACE=1</code> e um diretório de saída dedicado para evitar que dezenas de arquivos <code>.trc</code> e <code>.edf</code> poluam a pasta raiz do projeto.</p>
+          <h3><span class="step">2</span>Execute o <code>pascal_trace</code></h3>
+          <p>Exemplo de execução do PaScal Trace utilizando diferentes configurações.</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · EXECUÇÃO COM PASCAL_TRACE</span><button class="copy" type="button">Copiar</button></div>
-            <pre><code>mkdir -p traces_out
-export TAU_TRACE=1
-export TRACEDIR=$PWD/traces_out
-
-pascal_trace -t "1,2,4,8" -c "./app_trace 1000" -o resultado_trace.json</code></pre>
+            <pre><code>pascalanalyzer ./app_trace -t tau --taub -r 30 -c 1,2,4,8,16 -i "150 300 450 600 750" -o pascal_trace.tar</code></pre>
           </div>
 
           <div class="note warning">
@@ -236,13 +239,12 @@ pascal_trace -t "1,2,4,8" -c "./app_trace 1000" -o resultado_trace.json</code></
         <div class="section-body">
           <p>Após o <code>pascal_trace</code> concluir, o diretório <code>traces_out/</code> conterá um par de arquivos <code>tautrace.<node>.<context>.<thread>.trc</code> e definições de eventos <code>events.<node>.edf</code> para cada thread/processo.</p>
 
-          <h3><span class="step">1</span>Mescle e converta os arquivos de trace</h3>
-          <p>Utilize o <code>tau_treemerge.pl</code> para unificar as threads e o <code>tau_convert</code> para exportar o rastro para formatos legíveis (como SLOG-2 para o Jumpshot, OTF2 ou texto estruturado para ingestão no PaScal Viewer):</p>
+          <h3><span class="step">1</span>Converta os arquivos de trace</h3>
+          <p>Utilize o <code>tau_convert</code> para exportar o rastro para formatos legíveis (como SLOG-2 para o Jumpshot, OTF2 ou texto estruturado para ingestão no PaScal Viewer):</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · MERGE E CONVERSÃO</span><button class="copy" type="button">Copiar</button></div>
-            <pre><code>cd traces_out
-tau_treemerge.pl
-tau_convert -dump tau.trc events.edf > trace_legivel.txt</code></pre>
+            <pre><code> # Execute dentro da configuração desejada
+tau_convert -dumpname tau.trc events.edf > trace_legivel.txt</code></pre>
           </div>
 
           <h3><span class="step">2</span>Opções de saída após o <code>pascal_trace</code></h3>
@@ -257,7 +259,7 @@ tau_convert -dump tau.trc events.edf > trace_legivel.txt</code></pre>
               </thead>
               <tbody>
                 <tr>
-                  <td><code>resultado_trace.json</code></td>
+                  <td><code>pasca_trace.tar</code></td>
                   <td><a href="https://pascalsuite.imd.ufrn.br/dev-ang-pascal-viewer/" target="_blank" rel="noopener noreferrer">PaScal Viewer ↗</a></td>
                   <td>Avaliar speedup, eficiência e comportamento de escalabilidade das execuções rastreadas.</td>
                 </tr>
@@ -268,16 +270,15 @@ tau_convert -dump tau.trc events.edf > trace_legivel.txt</code></pre>
                 </tr>
                 <tr>
                   <td><code>trace_legivel.txt</code></td>
-                  <td><code>tau_convert -dump tau.trc events.edf</code></td>
-                  <td>Inspeção textual de timestamps de entrada/saída de funções e parsing automatizado.</td>
+                  <td><code>tau_convert -dumpname tau.trc events.edf</code></td>
+                  <td>Inspeção textual de timestamps de entrada/saída de funções e parsing.</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="expect">
-            <strong>O que observar após o trace:</strong> cruze os gargalos de eficiência apontados no <code>resultado_trace.json</code> (no PaScal Viewer) com a linha do tempo detalhada do TAU para identificar barreiras implícitas do OpenMP, espera por bloqueios (locks) ou desbalanceamento entre threads.
-          </div>
+            <strong>O que observar após o trace:</strong> Visualize de forma detalhada os gargalos de eficiência apontados no PaScal Viewer 
 
           <label class="complete"><input type="checkbox" data-step="postrace">Converti os rastros do TAU e analisei os resultados.</label>
         </div>
