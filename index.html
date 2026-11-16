@@ -83,10 +83,10 @@
         <div class="section-head">
           <div class="eyebrow">Etapa 01 / Escalabilidade</div>
           <h2 id="pascal-title">Instalar o PaScal Analyzer</h2>
-          <p>Baixe o pacote de releases do PaScal Suite e valide a instalação da CLI e da biblioteca de instrumentação.</p>
+          <p>Baixe o repositório do PaScal Suite, mude para a branch de integração com o TAU e valide a instalação.</p>
         </div>
         <div class="section-body">
-          <h3><span class="step">1</span>Crie o diretório e baixe o release</h3>
+          <h3><span class="step">1</span>Crie o diretório, instale dependências e clone o repositório</h3>
           <div class="command">
             <div class="command-top"><span>TERMINAL · DOWNLOAD</span><button class="copy" type="button">Copiar</button></div>
             <pre><code data-template="mkdir -p {prefix} && cd {prefix}
@@ -94,11 +94,12 @@ sudo apt update
 sudo apt install -y g++ gcc swig libpfm4-dev python3-dev python3-pip make
 git clone https://gitlab.com/lappsufrn/pascalsuite-analyzer.git
 cd pascalsuite-analyzer/
-git switch feat/tau_integration">sudo apt update
+git switch feat/tau_integration">mkdir -p $HOME/tools && cd $HOME/tools
+sudo apt update
 sudo apt install -y g++ gcc swig libpfm4-dev python3-dev python3-pip make
 git clone https://gitlab.com/lappsufrn/pascalsuite-analyzer.git
 cd pascalsuite-analyzer/
-git switch tfeat/tau_integration </code></pre>
+git switch feat/tau_integration</code></pre>
           </div>
 
           <h3><span class="step">2</span>Carregue o ambiente e teste</h3>
@@ -134,12 +135,12 @@ tar -xzf tau-2.33.2.tar.gz
 cd tau-2.33.2</code></pre>
           </div>
 
-          <h3><span class="step">2</span>Configure e compile com suporte a OpenMP / MPI</h3>
-          <p>Ajuste as flags conforme os compiladores disponíveis no seu nó (<code>gcc</code>, <code>mpicc</code> e <code>opari</code>).</p>
+          <h3><span class="step">2</span>Configure e compile com suporte a OpenMP, MPI e OPARI2</h3>
+          <p>A flag <code>-opari=download</code> baixa e instala automaticamente o <code>opari2</code> dentro do diretório <code>bin</code> do TAU para instrumentação de diretivas OpenMP.</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · COMPILAÇÃO</span><button class="copy" type="button">Copiar</button></div>
-            <pre><code data-template="./configure -prefix={prefix}/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari -bfd=download -dwarf=download
-make install -j$(nproc)">./configure -prefix=$HOME/tools/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari -bfd=download -dwarf=download
+            <pre><code data-template="./configure -prefix={prefix}/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari=download -bfd=download -dwarf=download
+make install -j$(nproc)">./configure -prefix=$HOME/tools/tau -c++=g++ -cc=gcc -fortran=gfortran -mpi -openmp -opari=download -bfd=download -dwarf=download
 make install -j$(nproc)</code></pre>
           </div>
 
@@ -162,7 +163,7 @@ spack load tau</code></pre>
         <div class="section-head">
           <div class="eyebrow">Etapa 03 / Integração</div>
           <h2 id="ambiente-title">Configurar variáveis de ambiente</h2>
-          <p>Unifique o <code>PATH</code> e os Makefiles do TAU com o PaScal Suite para que o <code>pascal_trace</code> funcione de qualquer diretório.</p>
+          <p>Unifique o <code>PATH</code>, o <code>opari2</code> e os Makefiles do TAU com o PaScal Suite para que o <code>pascal_trace</code> funcione de qualquer diretório.</p>
         </div>
         <div class="section-body">
           <h3><span class="step">1</span>Adicione as exportações ao seu shell</h3>
@@ -172,19 +173,19 @@ spack load tau</code></pre>
             <pre><code data-template="# PaScal Suite
 source {prefix}/pascalsuite-analyzer/env.sh
 
-# TAU Performance System
-export TAU_ROOT={prefix}/tau/x86_64
-export PATH=$TAU_ROOT/bin:$PATH
-export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)
-export TAU_MAKEFILE=/home/brunopaiva/tau-2.35.1/x86_64/lib/Makefile.tau-openmp-opari
+# TAU Performance System & OPARI2
+export TAU_ROOT={prefix}/tau
+export TAU_MAKEFILE=$(find $TAU_ROOT -name 'Makefile.tau-*' 2>/dev/null | head -n 1)
+export TAU_ARCH_DIR=$(dirname $(dirname $TAU_MAKEFILE))
+export PATH=$TAU_ARCH_DIR/bin:{prefix}/opari2/bin:$PATH
 export TAU_TRACE=1"># PaScal Suite
 source $HOME/tools/pascalsuite-analyzer/env.sh
 
-# TAU Performance System
-export TAU_ROOT=$HOME/tools/tau/x86_64
-export PATH=$TAU_ROOT/bin:$PATH
-export TAU_MAKEFILE=$(ls $TAU_ROOT/lib/Makefile.tau-* | head -n 1)
-export TAU_MAKEFILE=/home/brunopaiva/tau-2.35.1/x86_64/lib/Makefile.tau-openmp-opari
+# TAU Performance System & OPARI2
+export TAU_ROOT=$HOME/tools/tau
+export TAU_MAKEFILE=$(find $TAU_ROOT -name 'Makefile.tau-*' 2>/dev/null | head -n 1)
+export TAU_ARCH_DIR=$(dirname $(dirname $TAU_MAKEFILE))
+export PATH=$TAU_ARCH_DIR/bin:$HOME/tools/opari2/bin:$PATH
 export TAU_TRACE=1</code></pre>
           </div>
 
@@ -192,10 +193,10 @@ export TAU_TRACE=1</code></pre>
           <div class="command">
             <div class="command-top"><span>TERMINAL · VERIFICAÇÃO</span><button class="copy" type="button">Copiar</button></div>
             <pre><code>source ~/.bashrc
-which pascalanalyzer tau_exec tau_convert</code></pre>
+which pascalanalyzer tau_exec tau_convert opari2</code></pre>
           </div>
-          <div class="expect"><strong>Checkpoint:</strong> os três comandos devem retornar caminhos válidos dentro do diretório de instalação, e <code>echo $TAU_MAKEFILE</code> deve apontar para um arquivo <code>Makefile.tau-...</code> existente.</div>
-          <label class="complete"><input type="checkbox" data-step="env">Configurei o PATH e verifiquei pascalanalyzer e tau_exec.</label>
+          <div class="expect"><strong>Checkpoint:</strong> os comandos devem retornar caminhos válidos dentro do diretório de instalação, e <code>echo $TAU_MAKEFILE</code> deve apontar para um arquivo <code>Makefile.tau-...</code> existente.</div>
+          <label class="complete"><input type="checkbox" data-step="env">Configurei o PATH e verifiquei pascalanalyzer, tau_exec e opari2.</label>
         </div>
       </section>
 
@@ -204,18 +205,18 @@ which pascalanalyzer tau_exec tau_convert</code></pre>
         <div class="section-head">
           <div class="eyebrow">Etapa 04 / Coleta de Rastro</div>
           <h2 id="trace-title">Executar o <code>pascal_trace</code></h2>
-          <p>Habilite o modo de tracing do TAU durante a execução instrumentada da aplicação.</p>
+          <p>Compile com instrumentação OPARI2 e execute a coleta de traces via <code>pascalanalyzer</code>.</p>
         </div>
         <div class="section-body">
           <h3><span class="step">1</span>Compile a aplicação com o wrapper do TAU</h3>
-          <p>Para capturar regiões internas de eventos OpenMP no trace, compile utilizando <code>tau_cxx.sh</code></p>
+          <p>Para capturar regiões internas de eventos OpenMP no trace, compile utilizando <code>tau_cxx.sh</code> com a flag <code>-optOpari</code>:</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · COMPILAÇÃO INSTRUMENTADA</span><button class="copy" type="button">Copiar</button></div>
             <pre><code>tau_cxx.sh -optOpari -fopenmp -O2 app_trace.cpp -o app_trace</code></pre>
           </div>
 
           <h3><span class="step">2</span>Execute o <code>pascal_trace</code></h3>
-          <p>Exemplo de execução do PaScal Trace utilizando diferentes configurações.</p>
+          <p>Exemplo de execução do PaScal Trace utilizando diferentes configurações de threads e entradas:</p>
           <div class="command">
             <div class="command-top"><span>TERMINAL · EXECUÇÃO COM PASCAL_TRACE</span><button class="copy" type="button">Copiar</button></div>
             <pre><code>pascalanalyzer ./app_trace -t tau --taub -r 30 -c 1,2,4,8,16 -i "150 300 450 600 750" -o pascal_trace.tar</code></pre>
@@ -225,7 +226,7 @@ which pascalanalyzer tau_exec tau_convert</code></pre>
             <strong>Atenção ao volume de dados:</strong> arquivos de trace crescem rapidamente em aplicações com laços muito curtos e alta frequência de chamadas. Para testes iniciais, utilize entradas moderadas ou configure <code>TAU_THROTTLE=1</code>.
           </div>
 
-          <label class="complete"><input type="checkbox" data-step="trace">Executei o pascal_trace e gerei os arquivos .trc / .edf.</label>
+          <label class="complete"><input type="checkbox" data-step="trace">Executei o pascal_trace e gerei o pacote pascal_trace.tar.</label>
         </div>
       </section>
 
@@ -237,13 +238,13 @@ which pascalanalyzer tau_exec tau_convert</code></pre>
           <p>Consolide os rastros brutos gerados pelo TAU após o término do <code>pascal_trace</code> e visualize a linha do tempo e métricas.</p>
         </div>
         <div class="section-body">
-          <p>Após o <code>pascal_trace</code> concluir, o diretório <code>traces_out/</code> conterá um par de arquivos <code>tautrace.<node>.<context>.<thread>.trc</code> e definições de eventos <code>events.<node>.edf</code> para cada thread/processo.</p>
+          <p>Após a execução concluir, cada configuração gerará um par de arquivos <code>tautrace.<node>.<context>.<thread>.trc</code> e definições de eventos <code>events.<node>.edf</code> para cada thread/processo.</p>
 
           <h3><span class="step">1</span>Converta os arquivos de trace</h3>
-          <p>Utilize o <code>tau_convert</code> para exportar o rastro para formatos legíveis (como SLOG-2 para o Jumpshot, OTF2 ou texto estruturado para ingestão no PaScal Viewer):</p>
+          <p>Utilize o <code>tau_convert</code> para exportar o rastro para formatos legíveis (como SLOG-2 para o Jumpshot ou texto estruturado para inspeção):</p>
           <div class="command">
-            <div class="command-top"><span>TERMINAL · MERGE E CONVERSÃO</span><button class="copy" type="button">Copiar</button></div>
-            <pre><code> # Execute dentro da configuração desejada
+            <div class="command-top"><span>TERMINAL · CONVERSÃO</span><button class="copy" type="button">Copiar</button></div>
+            <pre><code># Execute dentro do diretório da configuração desejada
 tau_convert -dumpname tau.trc events.edf > trace_legivel.txt</code></pre>
           </div>
 
@@ -259,7 +260,7 @@ tau_convert -dumpname tau.trc events.edf > trace_legivel.txt</code></pre>
               </thead>
               <tbody>
                 <tr>
-                  <td><code>pasca_trace.tar</code></td>
+                  <td><code>pascal_trace.tar</code></td>
                   <td><a href="https://pascalsuite.imd.ufrn.br/dev-ang-pascal-viewer/" target="_blank" rel="noopener noreferrer">PaScal Viewer ↗</a></td>
                   <td>Avaliar speedup, eficiência e comportamento de escalabilidade das execuções rastreadas.</td>
                 </tr>
@@ -278,7 +279,8 @@ tau_convert -dumpname tau.trc events.edf > trace_legivel.txt</code></pre>
           </div>
 
           <div class="expect">
-            <strong>O que observar após o trace:</strong> Visualize de forma detalhada os gargalos de eficiência apontados no PaScal Viewer 
+            <strong>O que observar após o trace:</strong> visualize de forma detalhada os gargalos de eficiência apontados no PaScal Viewer, identificando barreiras implícitas do OpenMP, espera por bloqueios ou desbalanceamento entre threads.
+          </div>
 
           <label class="complete"><input type="checkbox" data-step="postrace">Converti os rastros do TAU e analisei os resultados.</label>
         </div>
@@ -333,7 +335,7 @@ tau_convert -dumpname tau.trc events.edf > trace_legivel.txt</code></pre>
         'Caminho de instalação (PREFIX)': 'Installation path (PREFIX)',
         'Etapa 01 / Escalabilidade': 'Step 01 / Scalability',
         'Instalar o PaScal Analyzer': 'Install PaScal Analyzer',
-        'Baixe o pacote de releases do PaScal Suite e valide a instalação da CLI e da biblioteca de instrumentação.': 'Download the PaScal Suite release package and validate the CLI and instrumentation library installation.',
+        'Baixe o repositório do PaScal Suite, mude para a branch de integração com o TAU e valide a instalação.': 'Clone the PaScal Suite repository, switch to the TAU integration branch, and validate the installation.',
         'Etapa 02 / Profiling & Tracing': 'Step 02 / Profiling & Tracing',
         'Instalar e configurar o TAU': 'Install and configure TAU',
         'Etapa 03 / Integração': 'Step 03 / Integration',
